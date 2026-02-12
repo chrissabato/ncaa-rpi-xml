@@ -99,6 +99,18 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; }
   background: #e8f0fe; border-radius: 12px; font-size: 0.8rem; color: #1a73e8;
 }
 
+.dh-card {
+  background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.dh-card h3 { font-size: 1rem; margin-bottom: 0.75rem; color: #333; }
+.dh-options { display: flex; gap: 1rem; }
+.dh-options label {
+  display: flex; align-items: center; gap: 0.35rem; cursor: pointer;
+  font-size: 0.9rem; color: #333;
+}
+.dh-options input[type="radio"] { accent-color: #4a90d9; }
+
 .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: center; }
 
 /* Success section */
@@ -145,6 +157,14 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; }
 
   <!-- Editor -->
   <div id="editorSection" class="editor">
+    <div id="dhCard" class="dh-card" style="display:none">
+      <h3>Doubleheader Status</h3>
+      <div class="dh-options">
+        <label><input type="radio" name="dhgame" value="" checked> Single Game</label>
+        <label><input type="radio" name="dhgame" value="1"> Game 1</label>
+        <label><input type="radio" name="dhgame" value="2"> Game 2</label>
+      </div>
+    </div>
     <div id="teamCards"></div>
     <div class="actions">
       <button class="btn btn-primary" id="startOverBtn">Start Over</button>
@@ -369,6 +389,18 @@ function loadXML(content, name) {
   fileName = name || 'game.xml';
   teamSelections = { V: null, H: null };
 
+  // Doubleheader detection
+  const dhCard = document.getElementById('dhCard');
+  const isBsgame = /<bsgame[\s>]/i.test(content);
+  if (isBsgame) {
+    dhCard.style.display = '';
+    const venueMatch = content.match(/<venue\s+[^>]*?>/);
+    const existingDH = venueMatch ? (venueMatch[0].match(/DHgame="([^"]*)"/) || [])[1] || '' : '';
+    document.querySelector(`input[name="dhgame"][value="${existingDH}"]`).checked = true;
+  } else {
+    dhCard.style.display = 'none';
+  }
+
   const teams = extractTeams(content);
   if (teams.length < 2) {
     showError(uploadError, 'Could not find two <team> elements with vh="V" and vh="H" in this XML file.');
@@ -462,7 +494,16 @@ document.getElementById('applyBtn').addEventListener('click', () => {
     showError(editorError, 'Please select an NCAA team for both visitor and home.');
     return;
   }
-  const updated = applyTeamCodes(xmlContent, teamSelections);
+  let updated = applyTeamCodes(xmlContent, teamSelections);
+  if (/<bsgame[\s>]/i.test(updated)) {
+    const dhVal = document.querySelector('input[name="dhgame"]:checked').value;
+    updated = updated.replace(/<venue\s+([^>]*?)>/g, (match, attrs) => {
+      if (/DHgame="[^"]*"/.test(attrs)) {
+        return `<venue ${attrs.replace(/DHgame="[^"]*"/, `DHgame="${dhVal}"`)}>`;
+      }
+      return `<venue ${attrs} DHgame="${dhVal}">`;
+    });
+  }
   const blob = new Blob([updated], { type: 'application/xml' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
