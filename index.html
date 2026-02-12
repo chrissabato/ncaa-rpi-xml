@@ -113,10 +113,8 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; }
 
 .actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; justify-content: center; }
 
-/* Success section */
-.success { display: none; text-align: center; }
-.success h2 { color: #2ea44f; margin-bottom: 1rem; }
-.success p { color: #666; margin-bottom: 1.5rem; font-size: 0.9rem; }
+.post-download { text-align: center; margin-top: 1.5rem; padding: 1rem; background: #f0faf0; border: 1px solid #c3e6c3; border-radius: 8px; }
+.post-download p { color: #2ea44f; font-size: 0.9rem; margin-bottom: 0.75rem; }
 
 @media (max-width: 500px) {
   .upload-section { grid-template-columns: 1fr; }
@@ -167,17 +165,13 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; }
     </div>
     <div id="teamCards"></div>
     <div class="actions">
-      <button class="btn btn-primary" id="startOverBtn">Start Over</button>
       <button class="btn btn-success" id="applyBtn">Apply &amp; Download</button>
     </div>
     <div id="editorError" class="error"></div>
-  </div>
-
-  <!-- Success -->
-  <div id="successSection" class="success">
-    <h2>Done!</h2>
-    <p>Your updated XML file has been downloaded.</p>
-    <button class="btn btn-primary" id="anotherBtn">Edit Another File</button>
+    <div id="postDownload" class="post-download" style="display:none">
+      <p>Your updated XML file has been downloaded.</p>
+      <button class="btn btn-primary" id="anotherBtn">Load Another File</button>
+    </div>
   </div>
 </div>
 
@@ -363,7 +357,7 @@ function applyTeamCodes(xml, selections) {
 // --- UI ---
 const uploadSection = document.getElementById('uploadSection');
 const editorSection = document.getElementById('editorSection');
-const successSection = document.getElementById('successSection');
+const postDownload = document.getElementById('postDownload');
 const uploadError = document.getElementById('uploadError');
 const editorError = document.getElementById('editorError');
 const teamCardsEl = document.getElementById('teamCards');
@@ -375,7 +369,7 @@ const fetchBtn = document.getElementById('fetchBtn');
 function showSection(section) {
   uploadSection.style.display = 'none';
   editorSection.style.display = 'none';
-  successSection.style.display = 'none';
+  postDownload.style.display = 'none';
   section.style.display = '';
   if (section === editorSection) section.style.display = 'block';
 }
@@ -395,7 +389,7 @@ function loadXML(content, name) {
   if (isBsgame) {
     dhCard.style.display = '';
     const venueMatch = content.match(/<venue\s+[^>]*?>/);
-    const existingDH = venueMatch ? (venueMatch[0].match(/DHgame="([^"]*)"/) || [])[1] || '' : '';
+    const existingDH = venueMatch ? (venueMatch[0].match(/dhgame="([^"]*)"/) || [])[1] || '' : '';
     document.querySelector(`input[name="dhgame"][value="${existingDH}"]`).checked = true;
   } else {
     dhCard.style.display = 'none';
@@ -498,10 +492,10 @@ document.getElementById('applyBtn').addEventListener('click', () => {
   if (/<bsgame[\s>]/i.test(updated)) {
     const dhVal = document.querySelector('input[name="dhgame"]:checked').value;
     updated = updated.replace(/<venue\s+([^>]*?)>/g, (match, attrs) => {
-      if (/DHgame="[^"]*"/.test(attrs)) {
-        return `<venue ${attrs.replace(/DHgame="[^"]*"/, `DHgame="${dhVal}"`)}>`;
+      if (/dhgame="[^"]*"/.test(attrs)) {
+        return `<venue ${attrs.replace(/dhgame="[^"]*"/, `dhgame="${dhVal}"`)}>`;
       }
-      return `<venue ${attrs} DHgame="${dhVal}">`;
+      return `<venue ${attrs} dhgame="${dhVal}">`;
     });
   }
   const blob = new Blob([updated], { type: 'application/xml' });
@@ -510,11 +504,10 @@ document.getElementById('applyBtn').addEventListener('click', () => {
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(a.href);
-  showSection(successSection);
+  postDownload.style.display = '';
 });
 
-// Start Over / Another
-document.getElementById('startOverBtn').addEventListener('click', () => { clearErrors(); showSection(uploadSection); fileInput.value = ''; urlInput.value = ''; pasteInput.value = ''; });
+// Load Another
 document.getElementById('anotherBtn').addEventListener('click', () => { clearErrors(); showSection(uploadSection); fileInput.value = ''; urlInput.value = ''; pasteInput.value = ''; });
 </script>
 </body>
