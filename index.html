@@ -499,10 +499,26 @@ document.getElementById('applyBtn').addEventListener('click', () => {
       return `<venue ${attrs} dhgame="${dhVal}">`;
     });
   }
+  // Build filename: YYYYMMDD-dhgame.xml
+  const dhVal = document.querySelector('input[name="dhgame"]:checked').value || '0';
+  const venueDate = (updated.match(/<venue\s+[^>]*?date="([^"]*)"/) || [])[1] || '';
+  let datePart = '';
+  if (venueDate) {
+    const parts = venueDate.split('/');
+    if (parts.length === 3) {
+      datePart = parts[2] + parts[0].padStart(2, '0') + parts[1].padStart(2, '0');
+    }
+  }
+  if (!datePart) {
+    const d = new Date();
+    datePart = d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  }
+  const dlName = dhVal ? `${datePart}-${dhVal}.xml` : `${datePart}.xml`;
+
   const blob = new Blob([updated], { type: 'application/xml' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = fileName;
+  a.download = dlName;
   a.click();
   URL.revokeObjectURL(a.href);
   postDownload.style.display = '';
