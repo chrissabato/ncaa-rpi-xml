@@ -117,6 +117,25 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; color: #f0f0
 .post-download { text-align: center; margin-top: 1.5rem; padding: 1rem; background: #1a2e1a; border: 1px solid #2a4a2a; border-radius: 8px; }
 .post-download p { color: #4caf50; font-size: 0.9rem; margin-bottom: 0.75rem; }
 
+.lookup {
+  margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #2a2a4a;
+}
+.lookup h2 { font-size: 1rem; color: #f0f0f0; margin-bottom: 0.75rem; }
+.lookup-row { display: flex; gap: 0.5rem; }
+.lookup-row input {
+  flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #3a3a5a; border-radius: 4px;
+  font-size: 0.9rem; font-family: inherit; background: #0f1a30; color: #e0e0e0;
+}
+.lookup-row input:focus { outline: none; border-color: #5a9fd4; box-shadow: 0 0 0 2px rgba(90,159,212,0.3); }
+.lookup-results { margin-top: 0.5rem; max-height: 220px; overflow-y: auto; }
+.lookup-result {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.35rem 0.6rem; border-radius: 4px; font-size: 0.85rem;
+}
+.lookup-result:nth-child(odd) { background: #16213e; }
+.lookup-result .lr-name { color: #e0e0e0; }
+.lookup-result .lr-id { color: #5a9fd4; font-family: monospace; font-size: 0.8rem; }
+
 @media (max-width: 600px) {
   .upload-section { grid-template-columns: 1fr; }
   .team-cards { grid-template-columns: 1fr; }
@@ -174,6 +193,15 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; color: #f0f0
       <p>Your updated XML file has been downloaded.</p>
       <button class="btn btn-primary" id="anotherBtn">Load Another File</button>
     </div>
+  </div>
+
+  <!-- Lookup -->
+  <div class="lookup">
+    <h2>Team Code Lookup</h2>
+    <div class="lookup-row">
+      <input type="text" id="lookupInput" placeholder="Search by team name or ID...">
+    </div>
+    <div id="lookupResults" class="lookup-results"></div>
   </div>
 </div>
 
@@ -527,6 +555,34 @@ document.getElementById('applyBtn').addEventListener('click', () => {
 
 // Load Another
 document.getElementById('anotherBtn').addEventListener('click', () => { clearErrors(); showSection(uploadSection); fileInput.value = ''; urlInput.value = ''; pasteInput.value = ''; });
+
+// Team Code Lookup
+const lookupInput = document.getElementById('lookupInput');
+const lookupResults = document.getElementById('lookupResults');
+lookupInput.addEventListener('input', () => {
+  const q = lookupInput.value.trim();
+  lookupResults.innerHTML = '';
+  if (!q) return;
+  const qn = normalize(q);
+  const exact = [], starts = [], contains = [];
+  for (const [id, name] of TEAMS) {
+    const n = normalize(name);
+    if (n === qn || id.toString() === q) exact.push([id, name]);
+    else if (n.startsWith(qn) || id.toString().startsWith(q)) starts.push([id, name]);
+    else if (n.includes(qn) || id.toString().includes(q)) contains.push([id, name]);
+  }
+  const results = [...exact, ...starts, ...contains].slice(0, 30);
+  if (!results.length) {
+    lookupResults.innerHTML = '<div class="lookup-result"><span class="lr-name" style="color:#666">No results</span></div>';
+    return;
+  }
+  results.forEach(([id, name]) => {
+    const row = document.createElement('div');
+    row.className = 'lookup-result';
+    row.innerHTML = `<span class="lr-name">${esc(name)}</span><span class="lr-id">${id}</span>`;
+    lookupResults.appendChild(row);
+  });
+});
 </script>
 </body>
 </html>
