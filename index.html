@@ -206,7 +206,7 @@ h1 { font-size: 1.5rem; text-align: center; margin-bottom: 0.25rem; color: #f0f0
 </div>
 
 <script>
-let TEAMS = [];
+let TEAMS = {};
 
 
 fetch('teams.json').then(r => r.json()).then(data => {
@@ -248,7 +248,7 @@ function findBestMatch(xmlName) {
   const normStripped = normalize(stripped);
   let best = null, bestScore = -1;
 
-  for (const [id, name] of TEAMS) {
+  for (const [name, id] of Object.entries(TEAMS)) {
     const normTeam = normalize(name);
     let score = 0;
 
@@ -330,13 +330,14 @@ function createAutocomplete(container, vh) {
 
   function filter() {
     const q = normalize(input.value);
-    if (!q) { render(TEAMS); open(); return; }
+    if (!q) { render(Object.entries(TEAMS).map(([n,i]) => [i,n])); open(); return; }
     const exact = [], starts = [], contains = [];
-    for (const t of TEAMS) {
-      const n = normalize(t[1]);
+    for (const [name, id] of Object.entries(TEAMS)) {
+      const t = [id, name];
+      const n = normalize(name);
       if (n === q) exact.push(t);
       else if (n.startsWith(q)) starts.push(t);
-      else if (n.includes(q) || t[0].toString().includes(input.value.trim())) contains.push(t);
+      else if (n.includes(q) || id.toString().includes(input.value.trim())) contains.push(t);
     }
     render([...exact, ...starts, ...contains]);
     open();
@@ -571,7 +572,7 @@ lookupInput.addEventListener('input', () => {
   if (!q) return;
   const qn = normalize(q);
   const exact = [], starts = [], contains = [];
-  for (const [id, name] of TEAMS) {
+  for (const [name, id] of Object.entries(TEAMS)) {
     const n = normalize(name);
     if (n === qn || id.toString() === q) exact.push([id, name]);
     else if (n.startsWith(qn) || id.toString().startsWith(q)) starts.push([id, name]);
